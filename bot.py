@@ -22,16 +22,25 @@ class TooFewArgumentsError(Exception):
     pass
 
 class MemeTemplate(object):
-    def __init__(self, im_path: str, config: object, font_path: str):
+    def __init__(self, im_path: str, config: Union[object, List[object]], font_path: str):
         self.im_path: str = im_path
-        self.config: object = config
+        self.config: Union[object, List[object]] = config
         self.font_path: ImageFont = font_path
 
     def make(self, txt: str) -> BytesIO:
+        if type(self.config) == list:
+            if len(self.config) > len(txt.split(',')):
+                raise TooFewArgumentsError()
+            config = self.config
+            parts = txt.split(',')
+        else:
+            config = [self.config,]
+            parts = [txt]
         im = Image.open(self.im_path)
         dr = ImageDraw.Draw(im)
         io = BytesIO()
-        dr.multiline_text(tuple(self.config['from']), '\n'.join(textwrap.wrap(txt, width=self.config['width'])), fill=tuple(self.config['colour']), font=ImageFont.truetype(self.font_path, size=self.config['font_size']))
+        for i, c in enumerate(config):
+            dr.multiline_text(tuple(c['from']), '\n'.join(textwrap.wrap(parts[i].strip(), width=c['width'])), fill=tuple(c['colour']), font=ImageFont.truetype(self.font_path, size=c['font_size']))
         im.save(io, format='PNG')
         im.close()
         ret = BytesIO(io.getvalue())
@@ -98,13 +107,17 @@ class Gagmachine(dc.Client):
 
     async def list_all(self, msg: dc.Message) -> None:
         await msg.channel.send('Alwight geezer, here be all ma templates:')
-        await msg.channel.send()
+        await msg.channel.send('\n'.join(f'- {meme}' for meme in self.__memes.keys()))
 
     async def send_meme(self, msg: dc.Message, meme: MemeTemplate) -> None:
         if len(msg.content.split(' ')) < 3:
             await msg.channel.send('Ya do need to provide some text, ya geezer!')
             return
-        f = meme.make(' '.join(msg.content.split(' ')[2:]))
+        try:
+            f = meme.make(' '.join(msg.content.split(' ')[2:]))
+        except:
+            await msg.channel.send('Ya need to give me some more arguments, ya geezer!')
+            return
         await msg.channel.send(file=dc.File(f, 'meme.png'))
         f.close()
 
