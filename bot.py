@@ -4,7 +4,10 @@ import dotenv
 dotenv.load_dotenv()
 import os
 import json
+import textwrap
 import discord as dc
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
 from typing import *
 
 BPATH: str = os.path.abspath(os.path.dirname(__file__))
@@ -15,10 +18,19 @@ class MissingFontError(Exception):
 class MissingMemeJPGError(Exception):
     pass
 
-class Meme(object):
-    def __init__(self, im_path: str, config: object):
+class MemeTemplate(object):
+    def __init__(self, im_path: str, config: object, font_path: str):
         self.im_path: str = im_path
         self.config: object = config
+        self.font_path: ImageFont = font_path
+
+    def make(self, txt: str) -> BytesIO:
+        im = Image.open(self.im_path)
+        dr = ImageDraw.Draw(im)
+        io = BytesIO()
+        dr.multiline_text(tuple(self.config['from']), '\n'.join(textwrap.wrap(txt, width=self.config['width'])), fill=tuple(self.config['colour']), font=ImageFont.truetype(self.font_path, size=self.config['font_size']))
+        im.save(io, format='PNG')
+        return BytesIO(io.getvalue())
 
 class Gagmachine(dc.Client):
     def __init__(self, tkn: str, meme_path: str = os.path.join(BPATH, 'memes'), asset_path: str = os.path.join(BPATH, 'assets')):
@@ -26,17 +38,17 @@ class Gagmachine(dc.Client):
         self.__tkn: str = tkn
         self.meme_path: str = meme_path
         self.asset_path: str = asset_path
-        self.__cmds: Dict[str, Callable[dc.Message, None]] = {
+        self.__cmds: Dict[str, Callable[Any, None]] = {
             'ping': self.pong,
             'refresh': self.refresh,
         }
-        self.__memes: List[Meme] = []
+        self.__memes: Dict[str, MemeTemplate] = {}
         if not os.path.isfile(os.path.join(self.asset_path, 'font.ttf')):
             raise MissingFontError()
         self.scan_memes()
 
     def scan_memes(self) -> None:
-        self.__memes = []
+        self.__memes = {}
         for f in os.listdir(self.meme_path):
             fname, ext = os.path.splitext(f)
             if ext == '.json':
@@ -44,7 +56,7 @@ class Gagmachine(dc.Client):
                 if not os.path.isfile(imfile):
                     raise MissingMemeJPGError()
                 with open(os.path.join(self.meme_path, f), 'r') as f:
-                    self.__memes.append(Meme(imfile, json.load(f)))
+                    self.__memes[fname] = MemeTemplate(imfile, json.load(f), os.path.join(self.asset_path, 'font.ttf'))
 
     def run(self) -> None:
         super().run(self.__tkn)
@@ -64,6 +76,10 @@ class Gagmachine(dc.Client):
             if k == msg.content.split(' ')[1]:
                 await v(msg)
                 return
+        for k, v in self.__memes.items():
+            if k == msg.content.split(' ')[1]:
+                await self.send_meme(msg, v)
+                return
         await msg.channel.send('I ain\'t got no idea whatcha said!')
 
     async def pong(self, msg: dc.Message) -> None:
@@ -72,6 +88,12 @@ class Gagmachine(dc.Client):
     async def refresh(self, msg: dc.Message) -> None:
         self.scan_memes()
         await msg.channel.send(f'Scanned for new meme templates ... Found {len(self.__memes)} ... ')
+
+    async def send_meme(self, msg: dc.Message, meme: MemeTemplate) -> None:
+        if len(msg.content.split(' ')) < 3:
+            await msg.channel.send('Ya do need to provide some text, ya geezer!')
+            return
+        await msg.channel.send(file=dc.File(meme.make(' '.join(msg.content.split(' ')[2:])), 'meme.jpg'))
 
 def main():
     if not os.environ['GAG_TKN']:
