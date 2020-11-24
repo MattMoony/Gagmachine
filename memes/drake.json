@@ -1,0 +1,14 @@
+[
+    {
+        "from": [ 255, 10 ],
+        "width": 16,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 25
+    },
+    {
+        "from": [ 255, 265 ],
+        "width": 16,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 25
+    }
+]

@@ -119,6 +119,7 @@ class Gagmachine(dc.Client):
             await msg.channel.send('Ya need to give me some more arguments, ya geezer!')
             return
         await msg.channel.send(file=dc.File(f, 'meme.png'))
+        await msg.delete()
         f.close()
 
 def main():
