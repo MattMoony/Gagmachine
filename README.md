@@ -1,4 +1,8 @@
 <div align="center">
+    <img width="200px" src="icon.jpg" />
+</div>
+
+<div align="center">
     <h1>Gagmachine</h1>
     <i>The one and only Discord meme bot!</i>
 </div>
