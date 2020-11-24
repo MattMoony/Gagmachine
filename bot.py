@@ -22,7 +22,8 @@ class TooFewArgumentsError(Exception):
     pass
 
 class MemeTemplate(object):
-    def __init__(self, im_path: str, config: Union[object, List[object]], font_path: str):
+    def __init__(self, name: str, im_path: str, config: Union[object, List[object]], font_path: str):
+        self.name: str = name
         self.im_path: str = im_path
         self.config: Union[object, List[object]] = config
         self.font_path: ImageFont = font_path
@@ -72,7 +73,7 @@ class Gagmachine(dc.Client):
                 if not os.path.isfile(imfile):
                     raise MissingMemeJPGError()
                 with open(os.path.join(self.meme_path, f), 'r') as f:
-                    self.__memes[fname] = MemeTemplate(imfile, json.load(f), os.path.join(self.asset_path, 'font.ttf'))
+                    self.__memes[fname] = MemeTemplate(fname, imfile, json.load(f), os.path.join(self.asset_path, 'font.ttf'))
 
     def run(self) -> None:
         super().run(self.__tkn)
@@ -103,6 +104,7 @@ class Gagmachine(dc.Client):
 
     async def refresh(self, msg: dc.Message) -> None:
         try:
+            print(f'[*] Scanning for new memes, because @{msg.author.name} told me to do so ... ')
             self.scan_memes()
         except MissingMemeJPGError:
             await msg.channel.send('It seems as if ya be missing some image files in the meme folder ... betta check that out!')
@@ -110,6 +112,7 @@ class Gagmachine(dc.Client):
         await msg.channel.send(f'Scanned for new meme templates ... Found {len(self.__memes)} ... ')
 
     async def list_all(self, msg: dc.Message) -> None:
+        print(f'[*] Listing all available memes for @{msg.author.name} ... ')
         await msg.channel.send('Alwight geezer, here be all ma templates:')
         await msg.channel.send('\n'.join(f'- {meme}' for meme in self.__memes.keys()))
 
@@ -119,6 +122,7 @@ class Gagmachine(dc.Client):
             return
         await msg.delete()
         await msg.channel.send(f'Right! <@!{msg.author.id}> I\'m on it!')
+        print(f'[*] Creating meme `{meme.name}` for @{msg.author.name} ... ')
         async with msg.channel.typing():
             try:
                 txt = ' '.join(msg.content.split(' ')[2:])
@@ -134,7 +138,7 @@ class Gagmachine(dc.Client):
 
 def main():
     if not os.environ['GAG_TKN']:
-        print('\033[33m[-] Missing "GAG_TKN" in environment variables ... Exiting! \033[0m')
+        print('[-] Missing "GAG_TKN" in environment variables ... Exiting!')
         os._exit(1)
     TKN: str = os.environ['GAG_TKN']
 
