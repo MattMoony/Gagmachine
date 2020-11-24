@@ -2,7 +2,7 @@
 
 import dotenv
 dotenv.load_dotenv()
-import os
+import os, re
 import json
 import textwrap
 import discord as dc
@@ -120,11 +120,15 @@ class Gagmachine(dc.Client):
         await msg.delete()
         async with msg.channel.typing():
             try:
-                f = meme.make(' '.join(msg.content.split(' ')[2:]))
-            except:
+                txt = ' '.join(msg.content.split(' ')[2:])
+                for m in re.findall(r'<@!\d+>', txt):
+                    _id = int(m.replace('<@!', '').replace('>', ''))
+                    txt = txt.replace(m, filter(lambda u: u.id == _id, msg.mentions).__next__().name)
+                f = meme.make(txt)
+            except TooFewArgumentsError:
                 await msg.channel.send('Ya need to give me some more arguments, ya geezer!')
                 return
-        await msg.channel.send(file=dc.File(f, 'meme.png'))
+        await msg.channel.send(' '.join(f'<@!{u.id}>' for u in msg.mentions), file=dc.File(f, 'meme.png'))
         f.close()
 
 def main():
