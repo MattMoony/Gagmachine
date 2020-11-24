@@ -125,15 +125,17 @@ class Gagmachine(dc.Client):
         print(f'[*] Creating meme `{meme.name}` for @{msg.author.name} ... ')
         async with msg.channel.typing():
             try:
-                txt = ' '.join(msg.content.split(' ')[2:])
+                txt: str = ' '.join(msg.content.split(' ')[2:])
                 for m in re.findall(r'<@!\d+>', txt):
-                    _id = int(m.replace('<@!', '').replace('>', ''))
+                    _id: int = int(m.replace('<@!', '').replace('>', ''))
                     txt = txt.replace(m, filter(lambda u: u.id == _id, msg.mentions).__next__().name)
-                f = meme.make(txt)
+                f: BytesIO = meme.make(txt)
             except TooFewArgumentsError:
                 await msg.channel.send('Ya need to give me some more arguments, ya geezer!')
                 return
-        await msg.channel.send(' '.join(f'<@!{u.id}>' for u in msg.mentions), file=dc.File(f, 'meme.png'))
+        m: dc.Message = await msg.channel.send(' '.join(f'<@!{u.id}>' for u in msg.mentions), file=dc.File(f, 'meme.png'))
+        await m.add_reaction('\N{THUMBS UP SIGN}')
+        await m.add_reaction('\N{THUMBS DOWN SIGN}')
         f.close()
 
 def main():
