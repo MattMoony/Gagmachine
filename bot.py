@@ -102,7 +102,11 @@ class Gagmachine(dc.Client):
         await msg.channel.send('Pong!')
 
     async def refresh(self, msg: dc.Message) -> None:
-        self.scan_memes()
+        try:
+            self.scan_memes()
+        except MissingMemeJPGError:
+            await msg.channel.send('It seems as if ya be missing some image files in the meme folder ... betta check that out!')
+            return
         await msg.channel.send(f'Scanned for new meme templates ... Found {len(self.__memes)} ... ')
 
     async def list_all(self, msg: dc.Message) -> None:
@@ -113,13 +117,14 @@ class Gagmachine(dc.Client):
         if len(msg.content.split(' ')) < 3:
             await msg.channel.send('Ya do need to provide some text, ya geezer!')
             return
-        try:
-            f = meme.make(' '.join(msg.content.split(' ')[2:]))
-        except:
-            await msg.channel.send('Ya need to give me some more arguments, ya geezer!')
-            return
-        await msg.channel.send(file=dc.File(f, 'meme.png'))
         await msg.delete()
+        async with msg.channel.typing():
+            try:
+                f = meme.make(' '.join(msg.content.split(' ')[2:]))
+            except:
+                await msg.channel.send('Ya need to give me some more arguments, ya geezer!')
+                return
+        await msg.channel.send(file=dc.File(f, 'meme.png'))
         f.close()
 
 def main():
