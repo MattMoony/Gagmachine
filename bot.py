@@ -118,6 +118,7 @@ class Gagmachine(dc.Client):
             await msg.channel.send('Ya do need to provide some text, ya geezer!')
             return
         await msg.delete()
+        await msg.channel.send(f'Right! <@!{msg.author.id}> I\'m on it!')
         async with msg.channel.typing():
             try:
                 txt = ' '.join(msg.content.split(' ')[2:])
