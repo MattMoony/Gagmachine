@@ -1,6 +1,6 @@
 {
     "from": [ 385, 445 ],
-    "width": 35,
+    "width": 10,
     "colour": [ 0, 0, 0 ],
-    "font_size": 35
+    "font_size": 25
 }
