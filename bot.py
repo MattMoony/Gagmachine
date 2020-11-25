@@ -5,6 +5,7 @@ dotenv.load_dotenv()
 import os, re
 import json
 import textwrap
+import datetime
 import discord as dc
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
@@ -19,7 +20,9 @@ class MissingMemeJPGError(Exception):
     pass
 
 class TooFewArgumentsError(Exception):
-    pass
+    def __init__(self, num: int):
+        super().__init__()
+        self.num: int = num
 
 class MemeTemplate(object):
     def __init__(self, name: str, im_path: str, config: Union[object, List[object]], font_path: str):
@@ -31,7 +34,7 @@ class MemeTemplate(object):
     def make(self, txt: str) -> BytesIO:
         if type(self.config) == list:
             if len(self.config) > len(txt.split(',')):
-                raise TooFewArgumentsError()
+                raise TooFewArgumentsError(len(self.config))
             config = self.config
             parts = txt.split(',')
         else:
@@ -80,11 +83,14 @@ class Gagmachine(dc.Client):
 
     async def on_ready(self) -> None:
         print(f'[bot.py]: Ready as {self.user} ... ')
+        await self.change_presence(activity=dc.Activity(type=dc.ActivityType.watching, name="gag *"))
 
     async def on_message(self, msg: dc.Message) -> None:
         if msg.author == self.user:
             return
         if not msg.content.startswith('gag '):
+            if msg.content.startswith('gag'):
+                await msg.channel.send(f'R u tryna talk to me? <@!{msg.author.id}>')
             return
         if not msg.content.split(' ')[1:]:
             await msg.channel.send('Don\'t chat to me \'less you got some\'in to say!')
@@ -100,7 +106,7 @@ class Gagmachine(dc.Client):
         await msg.channel.send('I ain\'t got no idea whatcha said!')
 
     async def pong(self, msg: dc.Message) -> None:
-        await msg.channel.send('Pong!')
+        await msg.channel.send(f'Pong! - time `{((datetime.datetime.now()-msg.created_at).microseconds)/1000:.2f}ms`')
 
     async def refresh(self, msg: dc.Message) -> None:
         try:
@@ -121,7 +127,7 @@ class Gagmachine(dc.Client):
             await msg.channel.send('Ya do need to provide some text, ya geezer!')
             return
         await msg.delete()
-        await msg.channel.send(f'Right! <@!{msg.author.id}> I\'m on it!')
+        rm: dc.Message = await msg.channel.send(f'Right! <@!{msg.author.id}> I\'m on it!')
         print(f'[*] Creating meme `{meme.name}` for @{msg.author.name} ... ')
         async with msg.channel.typing():
             try:
@@ -130,10 +136,12 @@ class Gagmachine(dc.Client):
                     _id: int = int(m.replace('<@!', '').replace('>', ''))
                     txt = txt.replace(m, filter(lambda u: u.id == _id, msg.mentions).__next__().name)
                 f: BytesIO = meme.make(txt)
-            except TooFewArgumentsError:
-                await msg.channel.send('Ya need to give me some more arguments, ya geezer!')
+            except TooFewArgumentsError as e:
+                await msg.channel.send(f'Ya need to give me some more arguments, ya geezer! Gimme `{e.num}` texts separated by a `,`!')
+                await rm.delete()
                 return
         m: dc.Message = await msg.channel.send(' '.join(f'<@!{u.id}>' for u in msg.mentions), file=dc.File(f, 'meme.png'))
+        await rm.delete()
         await m.add_reaction('\N{THUMBS UP SIGN}')
         await m.add_reaction('\N{THUMBS DOWN SIGN}')
         f.close()

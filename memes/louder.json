@@ -1,0 +1,32 @@
+[
+    {
+        "from": [ 15, 20 ],
+        "width": 14,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 20
+    },
+    {
+        "from": [ 310, 45 ],
+        "width": 8,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 20
+    },
+    {
+        "from": [ 420, 10 ],
+        "width": 7,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 35
+    },
+    {
+        "from": [ 90, 295 ],
+        "width": 10,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 35
+    },
+    {
+        "from": [ 340, 295 ],
+        "width": 11,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 35
+    }
+]
