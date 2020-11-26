@@ -1,0 +1,20 @@
+[
+    {
+        "from": [ 20, 15 ],
+        "width": 12,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 40
+    },
+    {
+        "from": [ 20, 315 ],
+        "width": 12,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 40
+    },
+    {
+        "from": [ 20, 610 ],
+        "width": 12,
+        "colour": [ 0, 0, 0 ],
+        "font_size": 40
+    }
+]
